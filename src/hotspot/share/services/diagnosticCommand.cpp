@@ -141,6 +141,7 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ZeroUnusedMemoryDCmd>(full_export, true, false));
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CheckpointDCmd>(full_export, true,false));
 
@@ -1164,4 +1165,14 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   typeArrayOop ba = typeArrayOop(res);
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
   output()->print_raw((const char*)addr, ba->length());
+}
+
+void ZeroUnusedMemoryDCmd::execute(DCmdSource source, TRAPS) {
+  Universe::heap()->collect(GCCause::_dcmd_gc_run);
+  size_t res = Universe::heap()->zero_unused();
+  if (res == size_t(-1)) {
+    output()->print_cr("Zeroing unused memory not supported by %s", Universe::heap()->name());
+  } else {
+    output()->print_cr("Successfully zeroed " SIZE_FORMAT " bytes of unused heap", res);
+  }
 }
